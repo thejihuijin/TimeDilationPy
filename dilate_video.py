@@ -4,12 +4,7 @@ from matplotlib.colors import ListedColormap
 import math
 import dilateVideofunctions as dVf
 
-# Oh shit nigga here we go
-
 #%% Define Parameters
-# Saliency Paremeters
-wsize_s=3.0; wsize_t=3.0; wsize_fs=5.0; wsize_f=5.0;
-scaleFactor=0.125; segLength = 100.0;
 
 # Downsample rate of video when reading into memory
 # Increase if running out
@@ -35,7 +30,6 @@ fr_scale = 1.5
 # issues. Some videos when being resized have caused weird distortions on
 # windows. Not sure why :(
 filename = ("Videos\dad_reflexes.mp4")
-filename = dVf.check_video(filename, wsize_s*wsize_fs/scaleFactor)
 
 #%% Load Video
 rgbvid, fr = sliceVid(filename,0,20,dim_ds)
@@ -44,9 +38,9 @@ rows, cols, n_frames = vid.shape
 del rgbvid, dim_ds
 
 #%% Compute Saliency
-print "Computing Saliency\n"
-saliencyMapHolder, saliencyMapTime = compute_saliency(filename,wsize_s,wsize_t,wsize_fs,wsize_ft,scaleFactor,segLength)
-print "Done\n"
+#print "Computing Saliency\n"
+#saliencyMapHolder, saliencyMapTime = compute_saliency(filename,wsize_s,wsize_t,wsize_fs,wsize_ft,scaleFactor,segLength)
+#print "Done\n"
 
 saliencyMapHolder = saliencyMapHolder(:,:,0:(n_frames-1))
 saliencyMapTime = saliencyMapTime(:,:,0:(n_frames-1))
