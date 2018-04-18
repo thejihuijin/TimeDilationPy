@@ -13,6 +13,28 @@ import os
 import cv2
 
 
+def compute_OF(vid):
+# ECE6258: Digital image processing 
+# School of Electrical and Computer Engineering 
+# Georgia Instiute of Technology 
+# Date Modified : 11/28/17
+# By Erik Jorgensen (ejorgensen7@gatech.edu), Jihui Jin (jihui@gatech.edu)
+    rows, cols, n_frames = vid.shape
+    flow_mags = np.zeros(vid.shape)
+    
+    frame1 = (vid[...,0]*255).astype(np.uint8)
+    for i in range(1,n_frames):
+        frame2 = (vid[...,i]*255).astype(np.uint8)
+        flow = cv2.calcOpticalFlowFarneback(frame1,frame2, None, 0.5,3,15,3,5,1.2,0)
+        mag, ang = cv2.cartToPolar(flow[...,0],flow[...,1])
+        #hsv[...,0] = ang*180/np.pi/2
+        flow_mags[...,i] = cv2.normalize(mag,None,0,1.0,cv2.NORM_MINMAX)
+        
+        frame1 = frame2.copy()
+    flow_mags[...,0] = flow_mags[...,1]
+    return flow_mags
+
+
 def compute_pyflow(vid,vidpath):
     # Check vid path to load video
     pathname, ext = os.path.splitext(vidpath)
@@ -56,7 +78,7 @@ def compute_pyflow(vid,vidpath):
         
         frame1 = frame2.copy()
         if i % update == 0:
-            print(int(100*i/n_frame),'% complete')
+            print(int(100*i/n_frames),'% complete')
     flow_mags[...,0] = flow_mags[...,1]
     np.save(flowpath,flow_mags)
     return flow_mags
