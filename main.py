@@ -12,14 +12,20 @@ from VideoDilation import *
 import sys
 sys.path.append('./OpticalFlow')
 sys.path.append('./OpticalFlow/pyflow_code/')
-from Optical_Flow import compute_pyflow
+from Optical_Flow import compute_pyflow, compute_OF
 #from Optical_Flow import compute_OF
+
+
+
 
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('filename', help='Filename of video being dilated')
 parser.add_argument('-ds','--downsample',help='Downsample factor', type=int)
+parser.add_argument('-sal','--saliency',help='Use saliency. Defaults to no saliency',action='store_true')
+parser.add_argument('-pyflow', help='Use pyflow for Optical Flow', action='store_true')
+
 args = parser.parse_args()
 
 
@@ -29,7 +35,9 @@ if not args.downsample:
     dim_ds = 2
 else:
     dim_ds = args.downsample
-print(dim_ds)
+
+use_sam = args.saliency
+use_pyflow = args.pyflow
 
 
 # # Actual Script
@@ -55,12 +63,21 @@ fr_scale = 1.5
 rgbvid, fr = sliceVid(filename,0,20,dim_ds)
 vid = rgbToGrayVid(rgbvid)
 rows, cols, n_frames = vid.shape
+
+if use_sam:
+    # Saliency
+    sys.path.append('sam')
+    sys.path.append('sam/weights')
+    from saliency import compute_SAMSal
+    salmap = compute_SAMSal(rgbvid,filename)
 del rgbvid
 
 #%% Compute optical flow frames
 print("Computing Optical Flow\n")
-# flow_mags = compute_OF(vid)
-flow_mags = compute_pyflow(vid,filename)
+if use_pyflow:
+    flow_mags = compute_pyflow(vid,filename)
+else:
+    flow_mags = compute_OF(vid)
 
 
 # Compute Energy Functions
@@ -70,7 +87,13 @@ print("Computing Energy\n")
 # of_minkowski = compute_energy(flow_mags,saliencyMapHolder,saliencyMapTime,'OF','MINK');
 # of_five_num = compute_energy(flow_mags,saliencyMapHolder,saliencyMapTime,'OF','FNS');
 # of_weight_pool_half = compute_energy(flow_mags,saliencyMapHolder,saliencyMapTime,'OF','WP');
-of_minkowski = minkowski(flow_mags, p=2)
+
+if use_sam:
+    # compute energy using masked optical flow
+    energy_map = flow_mags*salmap
+else:
+    energy_map = flow_mags
+of_minkowski = minkowski(energy_map, p=2)
 
 
 ## Compute Frame Rates from energy
