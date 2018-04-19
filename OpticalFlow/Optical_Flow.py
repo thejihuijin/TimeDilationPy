@@ -38,14 +38,14 @@ def compute_OF(vid):
 def compute_pyflow(vid,vidpath):
     # Check vid path to load video
     pathname, ext = os.path.splitext(vidpath)
-    flowpath = pathname+ '_flow.npy'
+    flowpath = pathname+ '_pyflow.npy'
     _, name = os.path.split(flowpath)
     print('Checking for', name) 
     if os.path.exists(flowpath):
         flow_mags = np.load(flowpath)
         if flow_mags.shape == vid.shape:
             print('file found')
-            return np.load(flowpath)
+            return flow_mags
         print('Flow mag shape does not match')
     else:
         print(name, 'does not exist. Computing from scratch.')
