@@ -25,6 +25,7 @@ parser.add_argument('filename', help='Filename of video being dilated')
 parser.add_argument('-ds','--downsample',help='Downsample factor', type=int)
 parser.add_argument('-sal','--saliency',help='Use saliency. Defaults to no saliency',action='store_true')
 parser.add_argument('-pyflow', help='Use pyflow for Optical Flow', action='store_true')
+parser.add_argument('-lasso', help='Use LASSO learned weights. Must be used with saliency', action ='store_true')
 
 args = parser.parse_args()
 
@@ -38,6 +39,11 @@ else:
 
 use_sam = args.saliency
 use_pyflow = args.pyflow
+
+use_lasso = args.lasso
+if use_lasso:
+    print('Using weights learned from lasso. Setting saliency flag to true')
+    use_sam = True
 
 
 # # Actual Script
@@ -88,19 +94,28 @@ print("Computing Energy\n")
 # of_five_num = compute_energy(flow_mags,saliencyMapHolder,saliencyMapTime,'OF','FNS');
 # of_weight_pool_half = compute_energy(flow_mags,saliencyMapHolder,saliencyMapTime,'OF','WP');
 
-if use_sam:
-    # compute energy using masked optical flow
-    energy_map = flow_mags*salmap
+if use_lasso:
+    print('Using LASSO learned weights')
+    weights = np.load('weights/lasso_weights.npy')
+    print('Building Features')
+    features = build_features(flow_mags, salmap)
+    scaledEnergy = preprocessing.scale(features)
+    print('Computing Energy')
+    energy = smooth_normalize(np.matmul(scaledEnergy,weights))
 else:
-    energy_map = flow_mags
-of_minkowski = minkowski(energy_map, p=2)
+    if use_sam:
+        # compute energy using masked optical flow
+        energy_map = flow_mags*salmap
+    else:
+        energy_map = flow_mags
+    energy = minkowski(energy_map, p=2)
 
 
 ## Compute Frame Rates from energy
 # select energy function
 #energy = compute_energy(flow_mags,saliencyMapHolder(:,:,61:end),saliencyMapTime,'MOF','WP');
-energy = of_minkowski
 # convert to fr
+
 time_padded_fr=energy2fr(energy,fr,.2,1.5);
 
 
